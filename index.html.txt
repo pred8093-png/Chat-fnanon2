@@ -1,0 +1,186 @@
+index.html
+index.html
+<!doctype html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>دردشة مشفّرة — فضاء، موسيقى، حب</title>
+  <style>
+    :root{
+      --bg: radial-gradient(circle at 20% 20%, #0f0c29, #302b63, #24243e);
+      --card: rgba(255,255,255,0.05);
+      --accent: #ff6ec7;
+      --accent2: #06b6d4;
+      --muted: #b8b8d1;
+      --text: #ffffff;
+    }
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: 'Cairo', system-ui, Arial;
+      direction:rtl;
+      background: var(--bg);
+      color:var(--text);
+      background-attachment: fixed;
+      animation: bgMove 30s infinite alternate ease-in-out;
+    }
+    @keyframes bgMove {
+      0% {background-position: 0 0;}
+      100% {background-position: 100% 100%;}
+    }
+    .container{max-width:980px;margin:20px auto;padding:16px}
+    .card{
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      border-radius:20px;
+      padding:20px;
+      box-shadow: 0 0 30px rgba(255,110,199,0.2);
+    }
+    h1{
+      margin:0 0 8px;
+      font-size:22px;
+      background: linear-gradient(90deg,var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align:center;
+    }
+    p{text-align:center;margin-bottom:14px;color:var(--muted)}
+    .chat{
+      height:360px;overflow:auto;border-radius:12px;padding:12px;
+      background: rgba(0,0,0,0.3);
+      border:1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(6px);
+    }
+    .bubble{
+      margin:6px 0;padding:10px 12px;border-radius:12px;max-width:75%;word-break:break-word;
+      box-shadow: 0 0 10px rgba(255,255,255,0.05);
+    }
+    .me{
+      background: linear-gradient(90deg,#ff6ec7,#ff9a9e);
+      margin-left:auto;
+    }
+    .them{
+      background: linear-gradient(90deg,#06b6d4,#4facfe);
+      margin-right:auto;
+    }
+    .meta{font-size:12px;color:var(--muted);margin-bottom:4px}
+    input,textarea,select,button{
+      width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.1);
+      padding:10px;border-radius:8px;color:var(--text);font-size:14px;
+    }
+    button{
+      cursor:pointer;background:linear-gradient(90deg,var(--accent),var(--accent2));
+      border:0;color:#fff;font-weight:600;
+      box-shadow: 0 0 12px rgba(255,110,199,0.4);
+    }
+    .note{font-size:12px;color:var(--muted);margin-top:8px}
+    footer{margin-top:14px;text-align:center;color:var(--muted);font-size:12px}
+    @media(max-width:720px){
+      .container{padding:10px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>💫 دردشة مشفّرة — فضاء × موسيقى × حب 💖</h1>
+      <p>مكانك الآمن للبوح تحت نجوم الفضاء وإيقاعات الموسيقى ونبض الحب.</p>
+      <!-- باقي الكود البرمجي (HTML + JS) كما هو في النسخة السابقة -->
+    </div>
+  </div>
+</body>
+</html>index.html
+<!doctype html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>دردشة مشفّرة — فضاء، موسيقى، حب</title>
+  <style>
+    :root{
+      --bg: radial-gradient(circle at 20% 20%, #0f0c29, #302b63, #24243e);
+      --card: rgba(255,255,255,0.05);
+      --accent: #ff6ec7;
+      --accent2: #06b6d4;
+      --muted: #b8b8d1;
+      --text: #ffffff;
+    }
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: 'Cairo', system-ui, Arial;
+      direction:rtl;
+      background: var(--bg);
+      color:var(--text);
+      background-attachment: fixed;
+      animation: bgMove 30s infinite alternate ease-in-out;
+    }
+    @keyframes bgMove {
+      0% {background-position: 0 0;}
+      100% {background-position: 100% 100%;}
+    }
+    .container{max-width:980px;margin:20px auto;padding:16px}
+    .card{
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      border-radius:20px;
+      padding:20px;
+      box-shadow: 0 0 30px rgba(255,110,199,0.2);
+    }
+    h1{
+      margin:0 0 8px;
+      font-size:22px;
+      background: linear-gradient(90deg,var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align:center;
+    }
+    p{text-align:center;margin-bottom:14px;color:var(--muted)}
+    .chat{
+      height:360px;overflow:auto;border-radius:12px;padding:12px;
+      background: rgba(0,0,0,0.3);
+      border:1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(6px);
+    }
+    .bubble{
+      margin:6px 0;padding:10px 12px;border-radius:12px;max-width:75%;word-break:break-word;
+      box-shadow: 0 0 10px rgba(255,255,255,0.05);
+    }
+    .me{
+      background: linear-gradient(90deg,#ff6ec7,#ff9a9e);
+      margin-left:auto;
+    }
+    .them{
+      background: linear-gradient(90deg,#06b6d4,#4facfe);
+      margin-right:auto;
+    }
+    .meta{font-size:12px;color:var(--muted);margin-bottom:4px}
+    input,textarea,select,button{
+      width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.1);
+      padding:10px;border-radius:8px;color:var(--text);font-size:14px;
+    }
+    button{
+      cursor:pointer;background:linear-gradient(90deg,var(--accent),var(--accent2));
+      border:0;color:#fff;font-weight:600;
+      box-shadow: 0 0 12px rgba(255,110,199,0.4);
+    }
+    .note{font-size:12px;color:var(--muted);margin-top:8px}
+    footer{margin-top:14px;text-align:center;color:var(--muted);font-size:12px}
+    @media(max-width:720px){
+      .container{padding:10px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>💫 دردشة مشفّرة — فضاء × موسيقى × حب 💖</h1>
+      <p>مكانك الآمن للبوح تحت نجوم الفضاء وإيقاعات الموسيقى ونبض الحب.</p>
+      <!-- باقي الكود البرمجي (HTML + JS) كما هو في النسخة السابقة -->
+    </div>
+  </div>
+</body>
+</html>
