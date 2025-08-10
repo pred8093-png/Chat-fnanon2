@@ -184,3 +184,240 @@ index.html
   </div>
 </body>
 </html>
+نسخة محسّنة للأندرويد: أزرار أكبر، نسخ/لصق احتياطي، ورسائل خطأ واضحة.</p>
+
+      <div style="display:grid;gap:12px;margin-top:12px">
+        <div class="row">
+          <div class="col">
+            <label>الاسم (اختياري)</label>
+            <input id="nick" placeholder="اسم مثل: زائر أو اتركه فارغًا" />
+          </div>
+          <div style="width:140px">
+            <label>ابقَ متخفياً</label>
+            <select id="anon">
+              <option value="false">ظاهر</option>
+              <option value="true" selected>متخفٍّ</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label>العبارة المشتركة (مفتاح)</label>
+          <input id="passphrase" placeholder="جملة أو كلمة سر مشتركة" />
+          <div class="note">يُستخدم لاستخراج مفتاح AES عبر PBKDF2. شاركه خارج هذا الموقع.</div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>إنشاء Offer — انسخه وابعثه للطرف الآخر</label>
+            <textarea id="localSignal" readonly></textarea>
+            <div class="controls" style="margin-top:8px">
+              <button id="createOffer" class="largeBtn">إنشاء Offer</button>
+              <button id="copyOffer" class="muted-btn">نسخ</button>
+            </div>
+          </div>
+
+          <div class="col">
+            <label>ألصق هنا العرض/الجواب من الطرف الآخر</label>
+            <textarea id="remoteSignal" placeholder="الصق Offer أو Answer هنا"></textarea>
+            <div class="controls" style="margin-top:8px">
+              <button id="acceptSignal" class="largeBtn">قبول</button>
+              <button id="pasteRemote" class="muted-btn">لصق</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="flex:1">
+            <label>حالة الاتصال</label>
+            <input id="status" readonly value="غير متصل" />
+          </div>
+          <div style="width:200px">
+            <label>تشفير</label>
+            <input id="encStatus" readonly value="غير مهيأ" />
+          </div>
+        </div>
+
+        <div class="chat" id="chat"></div>
+
+        <div class="foot" style="display:flex;gap:8px;margin-top:8px">
+          <input id="message" placeholder="اكتب رسالة..." />
+          <button id="send" class="largeBtn">إرسال</button>
+          <button id="clear" class="muted-btn">مسح</button>
+        </div>
+
+        <div class="note">طريقة العمل:
+          <ol style="margin:6px 0 0 18px;color:var(--muted)">
+            <li>افتح الملف على جهازين أو شاركه عبر GitHub Pages.</li>
+            <li>خلق Offer ونسخه للطرف الآخر، ثم اكمل تبادل Offer/Answer.</li>
+            <li>أدخل العبارة المشتركة نفسها على الطرفين ثم أرسل الرسائل.</li>
+          </ol>
+        </div>
+      </div>
+
+      <footer>صُمم للاستجابة والسهولة على شاشات اللمس — تمكين WebRTC وClipboard مطلوبان.</footer>
+    </div>
+  </div>
+
+<script>
+// نسخة محسّنة لاستخدمات الأندرويد: دعم Clipboard احتياطي، رسائل خطأ أوضح
+let pc, dc; let aesKey = null;
+const localSignal = document.getElementById('localSignal');
+const remoteSignal = document.getElementById('remoteSignal');
+const createOfferBtn = document.getElementById('createOffer');
+const acceptSignalBtn = document.getElementById('acceptSignal');
+const copyOfferBtn = document.getElementById('copyOffer');
+const pasteRemoteBtn = document.getElementById('pasteRemote');
+const status = document.getElementById('status');
+const encStatus = document.getElementById('encStatus');
+const chat = document.getElementById('chat');
+const sendBtn = document.getElementById('send');
+const messageInput = document.getElementById('message');
+const clearBtn = document.getElementById('clear');
+const passphraseInput = document.getElementById('passphrase');
+
+function logBubble(text,who='them'){
+  const b = document.createElement('div');
+  b.className = 'bubble '+(who==='me'?'me':'them');
+  const meta = document.createElement('div'); meta.className='meta';
+  meta.textContent = who==='me' ? (document.getElementById('nick').value||'متخفٍ') : 'الطرف الآخر';
+  b.appendChild(meta);
+  const t = document.createElement('div'); t.textContent = text; b.appendChild(t);
+  chat.appendChild(b);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function setStatus(s){ status.value = s }
+function setEnc(s){ encStatus.value = s }
+
+// Clipboard helper: يحاول API الجديد، وإذا فشل يستخدم الحيلة القديمة
+async function writeClipboard(text){
+  try{ await navigator.clipboard.writeText(text); return true; }
+  catch(e){
+    // fallback: create temporary textarea and execCommand (works على بعض المتصفحات)
+    try{
+      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+      ta.select(); ta.setSelectionRange(0, ta.value.length);
+      const ok = document.execCommand('copy'); document.body.removeChild(ta); return ok;
+    }catch(err){ console.warn('clipboard fallback failed', err); return false; }
+  }
+}
+
+async function readClipboard(){
+  try{ return await navigator.clipboard.readText(); }
+  catch(e){
+    // لا يوجد fallback آمن للقراءة من الحافظة في بعض المتصفحات
+    return '';
+  }
+}
+
+async function deriveKey(pass){
+  setEnc('قيد الإنشاء...');
+  const enc = new TextEncoder().encode(pass);
+  const salt = new TextEncoder().encode('chat-salt-v1');
+  const baseKey = await crypto.subtle.importKey('raw', enc, 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:100000,hash:'SHA-256'}, baseKey, {name:'AES-GCM',length:256}, false, ['encrypt','decrypt']);
+  setEnc('مُهيأ');
+  return key;
+}
+
+function setupPeer(isOffer){
+  pc = new RTCPeerConnection({iceServers:[{urls:['stun:stun.l.google.com:19302']}]});
+  pc.oniceconnectionstatechange = ()=> setStatus(pc.iceConnectionState);
+  pc.onicecandidate = e => { if(!e.candidate) localSignal.value = JSON.stringify(pc.localDescription); }
+  pc.ondatachannel = e=>{ dc = e.channel; initDC(); }
+  if(isOffer){ dc = pc.createDataChannel('chat'); initDC(); }
+}
+
+function initDC(){
+  dc.onopen = ()=> setStatus('قناة مفتوحة');
+  dc.onclose = ()=> setStatus('مغلقة');
+  dc.onmessage = async (e)=>{
+    try{
+      const obj = JSON.parse(e.data);
+      if(obj.type==='msg'){
+        const plaintext = await decryptMessage(obj.payload);
+        logBubble(plaintext,'them');
+      }
+    }catch(err){console.error(err)}
+  }
+}
+
+async function encryptMessage(text){ if(!aesKey) throw new Error('مفتاح التشفير غير مُهيأ');
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder().encode(text);
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM',iv}, aesKey, enc);
+  return JSON.stringify({iv:Array.from(iv),ct:Array.from(new Uint8Array(ct))});
+}
+
+async function decryptMessage(payload){ if(!aesKey) throw new Error('مفتاح التشفير غير مُهيأ');
+  const obj = payload;
+  const iv = new Uint8Array(obj.iv);
+  const ct = new Uint8Array(obj.ct);
+  const plain = await crypto.subtle.decrypt({name:'AES-GCM',iv}, aesKey, ct);
+  return new TextDecoder().decode(plain);
+}
+
+createOfferBtn.onclick = async ()=>{
+  try{
+    setupPeer(true);
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    setStatus('انشاء Offer...');
+  }catch(err){ alert('خطأ عند إنشاء Offer: '+err.message) }
+}
+
+acceptSignalBtn.onclick = async ()=>{
+  const text = remoteSignal.value.trim(); if(!text) return alert('ألصق العرض أو الجواب أولاً');
+  let obj; try{ obj = JSON.parse(text); }catch(e){ return alert('نص الإشارة غير صالح JSON'); }
+  if(obj.type === 'offer'){
+    try{
+      setupPeer(false);
+      await pc.setRemoteDescription(obj);
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      localSignal.value = JSON.stringify(pc.localDescription);
+      setStatus('تم إنشاء Answer — أرسله للطرف الأول');
+    }catch(err){ alert('خطأ في استقبال العرض: '+err.message) }
+  } else if(obj.type === 'answer'){
+    try{ if(!pc) setupPeer(true); await pc.setRemoteDescription(obj); setStatus('Answer مقبول — في إنتظار القناة'); }
+    catch(err){ alert('فشل قبول Answer: '+err.message) }
+  } else { alert('نوع الإشارة غير معروف'); }
+}
+
+copyOfferBtn.onclick = async ()=>{
+  if(!localSignal.value) return alert('لا يوجد عرض للنسخ');
+  const ok = await writeClipboard(localSignal.value);
+  if(ok) alert('نُسخ إلى الحافظة'); else alert('فشل النسخ — انسخ يدوياً');
+}
+
+pasteRemoteBtn.onclick = async ()=>{
+  const txt = await readClipboard();
+  if(txt) remoteSignal.value = txt; else alert('فشل قراءة الحافظة — الصق يدوياً');
+}
+
+sendBtn.onclick = async ()=>{
+  const txt = messageInput.value.trim(); if(!txt) return;
+  if(!dc || dc.readyState!=='open') return alert('القناة غير مفتوحة');
+  try{
+    if(!aesKey){ const pass = passphraseInput.value; if(!pass) return alert('أدخل العبارة المشتركة'); aesKey = await deriveKey(pass); }
+    const encrypted = await encryptMessage(txt);
+    dc.send(JSON.stringify({type:'msg',payload:JSON.parse(encrypted)}));
+    logBubble(txt,'me'); messageInput.value = '';
+  }catch(err){ alert('خطأ في الإرسال: '+err.message); console.error(err) }
+}
+
+clearBtn.onclick = ()=>{ chat.innerHTML=''; }
+messageInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendBtn.click(); } });
+
+// فحص مبسّط عند التحميل لظهور رسائل توضيحية للأندرويد
+window.addEventListener('load', ()=>{
+  // تأكد من دعم WebRTC
+  if(!window.RTCPeerConnection){ setStatus('WebRTC غير مدعوم في هذا المتصفح'); }
+  // توضيح لClipboard
+  if(!navigator.clipboard){ console.warn('Clipboard API غير متاح'); }
+});
+</script>
+
+</body>
+</html>
