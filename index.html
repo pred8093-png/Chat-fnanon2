@@ -1,92 +1,122 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دردشة القنوات</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FaNa Private Chat</title>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div id="login-screen" class="screen">
-        <h2>اختر اسمك</h2>
-        <input type="text" id="username" placeholder="اسمك">
-        <h3>اختر قناة</h3>
-        <div id="channels"></div>
-        <input type="password" id="channel-password" placeholder="باسورد القناة (إن وجد)">
-        <button id="join-btn">دخول</button>
+  <div id="login-screen" class="screen">
+    <h2>أدخل اسمك الوهمي</h2>
+    <input type="text" id="username" placeholder="مثلاً: زائر123" autocomplete="off" />
+    <h3>اختر قناة للانضمام</h3>
+    <div id="channels"></div>
+    <input type="password" id="channel-password" placeholder="كلمة سر القناة (إن وجدت)" autocomplete="off" />
+    <button id="join-btn">دخول القناة</button>
+  </div>
+
+  <div id="chat-screen" class="screen hidden">
+    <div class="chat-header">
+      <h2 id="room-name"></h2>
+      <button id="music-btn" title="تشغيل/إيقاف الموسيقى">🎵</button>
+      <button id="leave-btn" title="خروج من القناة">🚪</button>
     </div>
+    <div id="messages"></div>
+    <input type="text" id="message-input" placeholder="اكتب رسالتك..." autocomplete="off" />
+    <button id="send-btn">إرسال</button>
+  </div>
 
-    <div id="chat-screen" class="screen hidden">
-        <div class="chat-header">
-            <h2 id="room-name"></h2>
-            <button id="music-btn">🎵</button>
-        </div>
-        <div id="messages"></div>
-        <input type="text" id="message-input" placeholder="اكتب رسالتك...">
-        <button id="send-btn">إرسال</button>
-    </div>
+  <audio id="bg-music" loop>
+    <source src="sounds/lounge.mp3" type="audio/mpeg" />
+  </audio>
 
-    <audio id="bg-music" loop>
-        <source src="sounds/lounge.mp3" type="audio/mpeg">
-    </audio>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
+  let username = "";
+  let currentRoom = "";
 
-        let username = "";
-        let currentRoom = "";
+  const loginScreen = document.getElementById("login-screen");
+  const chatScreen = document.getElementById("chat-screen");
+  const channelsDiv = document.getElementById("channels");
+  const roomNameDisplay = document.getElementById("room-name");
+  const messagesDiv = document.getElementById("messages");
+  const messageInput = document.getElementById("message-input");
+  const usernameInput = document.getElementById("username");
+  const passwordInput = document.getElementById("channel-password");
+  const joinBtn = document.getElementById("join-btn");
+  const sendBtn = document.getElementById("send-btn");
+  const musicBtn = document.getElementById("music-btn");
+  const leaveBtn = document.getElementById("leave-btn");
+  const bgMusic = document.getElementById("bg-music");
 
-        socket.on("channelsList", (channels) => {
-            const channelsDiv = document.getElementById("channels");
-            channelsDiv.innerHTML = "";
-            channels.forEach(ch => {
-                const btn = document.createElement("button");
-                btn.textContent = ch.name + (ch.protected ? " 🔒" : "");
-                btn.onclick = () => {
-                    document.getElementById("channel-password").value = "";
-                    document.getElementById("join-btn").onclick = () => joinRoom(ch.name);
-                };
-                channelsDiv.appendChild(btn);
-            });
-        });
+  socket.on("channelsList", (channels) => {
+    channelsDiv.innerHTML = "";
+    channels.forEach(ch => {
+      const btn = document.createElement("button");
+      btn.textContent = ch.name + (ch.protected ? " 🔒" : "");
+      btn.onclick = () => {
+        passwordInput.value = "";
+        joinBtn.onclick = () => joinRoom(ch.name);
+      };
+      channelsDiv.appendChild(btn);
+    });
+  });
 
-        function joinRoom(room) {
-            username = document.getElementById("username").value.trim();
-            const password = document.getElementById("channel-password").value;
-            if (!username) return alert("اكتب اسمك أولاً");
-            socket.emit("joinRoom", { room, username, password });
-        }
+  function joinRoom(room) {
+    username = usernameInput.value.trim();
+    const password = passwordInput.value;
+    if (!username) return alert("الرجاء إدخال اسمك الوهمي");
+    socket.emit("joinRoom", { room, username, password });
+  }
 
-        socket.on("joinSuccess", (room) => {
-            currentRoom = room;
-            document.getElementById("room-name").textContent = "📡 " + room;
-            document.getElementById("login-screen").classList.add("hidden");
-            document.getElementById("chat-screen").classList.remove("hidden");
-            document.getElementById("bg-music").play();
-        });
+  socket.on("joinSuccess", (room) => {
+    currentRoom = room;
+    roomNameDisplay.textContent = "القناة: " + room;
+    loginScreen.classList.add("hidden");
+    chatScreen.classList.remove("hidden");
+    messagesDiv.innerHTML = "";
+    bgMusic.play();
+  });
 
-        socket.on("joinError", (msg) => alert(msg));
+  socket.on("joinError", (msg) => alert(msg));
 
-        socket.on("message", (msg) => {
-            const div = document.createElement("div");
-            div.textContent = msg;
-            document.getElementById("messages").appendChild(div);
-        });
+  socket.on("message", (msg) => {
+    const div = document.createElement("div");
+    div.textContent = msg;
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  });
 
-        document.getElementById("send-btn").onclick = () => {
-            const text = document.getElementById("message-input").value.trim();
-            if (text) {
-                socket.emit("chatMessage", { room: currentRoom, username, text });
-                document.getElementById("message-input").value = "";
-            }
-        };
+  sendBtn.onclick = () => {
+    const text = messageInput.value.trim();
+    if (text) {
+      socket.emit("chatMessage", { room: currentRoom, username, text });
+      messageInput.value = "";
+    }
+  };
 
-        document.getElementById("music-btn").onclick = () => {
-            const music = document.getElementById("bg-music");
-            if (music.paused) music.play();
-            else music.pause();
-        };
-    </script>
+  messageInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      sendBtn.click();
+    }
+  });
+
+  musicBtn.onclick = () => {
+    if (bgMusic.paused) bgMusic.play();
+    else bgMusic.pause();
+  };
+
+  leaveBtn.onclick = () => {
+    socket.emit("leaveRoom", { room: currentRoom, username });
+    chatScreen.classList.add("hidden");
+    loginScreen.classList.remove("hidden");
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
+  };
+
+</script>
 </body>
 </html>
