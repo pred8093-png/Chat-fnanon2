@@ -1,0 +1,40 @@
+body {
+    font-family: 'Tahoma', sans-serif;
+    background: url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee') no-repeat center center fixed;
+    background-size: cover;
+    margin: 0;
+    color: white;
+    text-align: center;
+}
+
+.screen {
+    padding: 20px;
+}
+
+.hidden {
+    display: none;
+}
+
+#channels button {
+    display: block;
+    margin: 10px auto;
+    padding: 10px;
+    width: 200px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#messages {
+    height: 300px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.4);
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 10px;
+}
