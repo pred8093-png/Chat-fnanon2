@@ -285,6 +285,13 @@
     bgMusic.pause();
     bgMusic.currentTime = 0;
   };
+  <!-- إضافة تحت div#channels في شاشة الدخول -->
+<div style="margin-bottom:20px; text-align:center;">
+  <h3>أو أنشئ قناة جديدة</h3>
+  <input type="text" id="new-channel-name" placeholder="اسم القناة الجديدة" autocomplete="off" />
+  <input type="password" id="new-channel-password" placeholder="كلمة سر للقناة (اختياري)" autocomplete="off" />
+  <button id="create-channel-btn">إنشاء القناة</button>
+</div>
 </script>
 </body>
 </html>
